@@ -1,0 +1,25 @@
+:root { --bg:#fbfbf9; --fg:#1a1a1a; --muted:#666; --accent:#5a67d8; --card:#fff; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+main { max-width:46rem; margin:0 auto; padding:2.5rem 1.25rem 4rem; }
+h1 { font-size:1.9rem; margin:0 0 .25rem; letter-spacing:-.02em; }
+.sub { color:var(--muted); margin:.1rem 0 1.25rem; font-size:1.05rem; }
+.note { color:var(--muted); background:#f0f0ec; border-radius:.6rem;
+  padding:.8rem 1rem; font-size:.92rem; margin:0 0 1.75rem; }
+.back a, .archive a { color:var(--accent); text-decoration:none; }
+.back a:hover, .archive a:hover { text-decoration:underline; }
+.back { margin:0 0 1rem; font-size:.9rem; }
+ol.words { list-style:none; margin:0; padding:0; }
+li.word { display:flex; gap:1rem; background:var(--card); border:1px solid #ececec;
+  border-radius:.7rem; padding:1rem 1.1rem; margin:0 0 .75rem; }
+li.word .num { flex:0 0 1.75rem; height:1.75rem; border-radius:50%;
+  background:var(--accent); color:#fff; font-weight:600; font-size:.85rem;
+  display:flex; align-items:center; justify-content:center; }
+li.word h2 { font-size:1.15rem; margin:.1rem 0 .4rem; letter-spacing:.01em; }
+ul.defs { margin:0; padding-left:1.1rem; color:#333; }
+ul.defs li { margin:.15rem 0; }
+ul.archive { list-style:none; padding:0; margin:0; }
+ul.archive li { padding:.55rem 0; border-bottom:1px solid #ececec; }
+footer { margin-top:2.5rem; color:var(--muted); font-size:.8rem;
+  border-top:1px solid #ececec; padding-top:1rem; }
