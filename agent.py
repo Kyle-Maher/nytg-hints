@@ -24,7 +24,14 @@ import anthropic
 
 # --- Configuration -----------------------------------------------------------
 
-MODEL = "claude-opus-4-8"
+# Haiku is plenty for dictionary definitions and ~5x cheaper than Opus per token.
+# Bump to "claude-sonnet-4-6" (and set EFFORT) if you want richer definitions.
+MODEL = "claude-haiku-4-5"
+# Thinking/effort meaningfully raise cost and aren't needed to define words.
+# `effort` ONLY works on Opus 4.5+/Sonnet 4.6 — it 400s on Haiku, so leave it
+# None unless you also switch MODEL to an Opus/Sonnet model.
+THINKING = {"type": "disabled"}
+EFFORT = None  # e.g. "medium" when using Sonnet/Opus
 NYT_URL = "https://www.nytimes.com/svc/connections/v2/{date}.json"
 DOCS = Path(__file__).resolve().parent / "docs"
 MANIFEST = DOCS / "days.json"
@@ -96,6 +103,10 @@ speech where helpful (e.g. "(verb)").
 - Treat every word completely independently. Do NOT group the words, do NOT \
 mention or hint at any category, theme, puzzle, game, or connection between \
 them. You are only defining words.
+- You already know the standard dictionary meanings of common English words. \
+Only use the web_search tool for a word you are genuinely unsure about — \
+slang, proper nouns, brand names, or rare/technical terms. Do not search for \
+ordinary words.
 - Return ONLY a JSON object, no prose before or after."""
 
 USER_TEMPLATE = """\
@@ -106,7 +117,8 @@ Define these words. Return a JSON object of exactly this shape:
 Keep the words in the same order I give them. Words:
 {word_list}"""
 
-WEB_SEARCH_TOOL = {"type": "web_search_20260209", "name": "web_search"}
+# Cap searches so a bad loop can't run up the bill; most days use 0–3.
+WEB_SEARCH_TOOL = {"type": "web_search_20260209", "name": "web_search", "max_uses": 6}
 
 
 def _extract_text(content) -> str:
@@ -132,17 +144,20 @@ def research_definitions(words: list[str]) -> list[dict]:
     word_list = "\n".join(f"{i + 1}. {w}" for i, w in enumerate(words))
     messages = [{"role": "user", "content": USER_TEMPLATE.format(word_list=word_list)}]
 
+    base_kwargs = dict(
+        model=MODEL,
+        max_tokens=4000,
+        system=SYSTEM_PROMPT,
+        tools=[WEB_SEARCH_TOOL],
+    )
+    if THINKING is not None:
+        base_kwargs["thinking"] = THINKING
+    if EFFORT is not None:
+        base_kwargs["output_config"] = {"effort": EFFORT}
+
     response = None
     for _ in range(MAX_TOOL_ROUNDS):
-        response = client.messages.create(
-            model=MODEL,
-            max_tokens=16000,
-            thinking={"type": "adaptive"},
-            output_config={"effort": "high"},
-            system=SYSTEM_PROMPT,
-            tools=[WEB_SEARCH_TOOL],
-            messages=messages,
-        )
+        response = client.messages.create(messages=messages, **base_kwargs)
         if response.stop_reason == "pause_turn":
             # Server-side web_search loop hit its per-response cap; resume.
             messages.append({"role": "assistant", "content": response.content})
