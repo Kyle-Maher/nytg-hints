@@ -118,7 +118,14 @@ Keep the words in the same order I give them. Words:
 {word_list}"""
 
 # Cap searches so a bad loop can't run up the bill; most days use 0–3.
-WEB_SEARCH_TOOL = {"type": "web_search_20260209", "name": "web_search", "max_uses": 6}
+# `allowed_callers=["direct"]` disables the code-execution dynamic-filtering path
+# (which Haiku can't do) so the model calls web search directly.
+WEB_SEARCH_TOOL = {
+    "type": "web_search_20260209",
+    "name": "web_search",
+    "max_uses": 6,
+    "allowed_callers": ["direct"],
+}
 
 
 def _extract_text(content) -> str:
