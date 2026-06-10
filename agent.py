@@ -15,6 +15,7 @@ import datetime as dt
 import html
 import json
 import os
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -107,6 +108,8 @@ them. You are only defining words.
 Only use the web_search tool for a word you are genuinely unsure about — \
 slang, proper nouns, brand names, or rare/technical terms. Do not search for \
 ordinary words.
+- Write each definition as plain text only. Do NOT include citation tags, \
+footnote markers, source references, HTML, or any other markup.
 - Return ONLY a JSON object, no prose before or after."""
 
 USER_TEMPLATE = """\
@@ -130,6 +133,14 @@ WEB_SEARCH_TOOL = {
 
 def _extract_text(content) -> str:
     return "".join(b.text for b in content if b.type == "text")
+
+
+_TAG_RE = re.compile(r"<[^>]+>")  # strips <cite ...>, </cite>, and any stray HTML
+
+
+def _clean(text: str) -> str:
+    """Remove citation/markup tags the model may emit from web-search results."""
+    return re.sub(r"\s+", " ", _TAG_RE.sub("", text)).strip()
 
 
 def _parse_json(text: str) -> dict:
@@ -180,7 +191,8 @@ def research_definitions(words: list[str]) -> list[dict]:
     # so a model reorder can't desync definitions from positions.
     by_word = {}
     for item in parsed.get("words", []):
-        defs = [d for d in item.get("definitions", []) if d and d.strip()]
+        defs = [_clean(d) for d in item.get("definitions", []) if d and d.strip()]
+        defs = [d for d in defs if d]
         by_word[item.get("word", "").strip().upper()] = defs
 
     entries = []
